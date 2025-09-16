@@ -109,6 +109,25 @@ sendReqList* IDM_getFromSendRequestList(uint reqID)
     }
 }
 
+sendReqList* IDM_searchFromSendRequestList(const char param_mac[MAC_ADDR_SIZE])
+{
+
+    if(param_mac == NULL)
+    {
+        return NULL;
+    }
+
+    sendReqList *cur = headsendReqList;
+    while (cur != NULL) 
+    {
+        if (strncmp(cur->Mac_dest, param_mac, MAC_ADDR_SIZE - 1) == 0)
+        {
+            return cur;
+	}
+	cur = cur->next;
+    }
+    return NULL;
+}
 
 void IDM_addToSendSubscriptionuestList( sendSubscriptionList *newSubscription)
 {
@@ -318,31 +337,40 @@ ANSC_STATUS IDM_sendMsg_to_Remote_device(idm_send_msg_Params_t *param)
                 memset(&payload, 0, sizeof(payload_t));
                 if(param->operation == GET || param->operation == SET || param->operation == IDM_REQUEST)
                 {
-                    /* Create request entry */
-                    sendReqList *newReq = malloc(sizeof(sendReqList));
-		    if (newReq != NULL) {
-                   	memset(newReq, 0, sizeof(sendReqList));
-                        newReq->reqId = gReqIdCounter++;
-                        strncpy(newReq->Mac_dest,param->Mac_dest, sizeof(newReq->Mac_dest)-1);
-                        newReq->resCb = param->resCb;
-                        newReq->timeout = param->timeout;
-                        newReq->next = NULL;
+                    sendReqList *SendReq = IDM_searchFromSendRequestList(param->Mac_dest);
+                    if(SendReq != NULL)
+                    {
+                        CcspTraceInfo(("%s:%d IDM message already available in linked list. Resending the same request \n",__FUNCTION__, __LINE__));
+                        payload.reqID = SendReq->reqId; 
+                    }
+                    else
+                    {
+                        /* Create request entry */
+                        sendReqList *newReq = malloc(sizeof(sendReqList));
+                        if (newReq != NULL) {
+                            memset(newReq, 0, sizeof(sendReqList));
+                            newReq->reqId = gReqIdCounter++;
+                            strncpy(newReq->Mac_dest,param->Mac_dest, sizeof(newReq->Mac_dest)-1);
+                            newReq->resCb = param->resCb;
+                            newReq->timeout = param->timeout;
+                            newReq->next = NULL;
 
-                        IDM_addToSendRequestList(newReq);
-                        payload.reqID = newReq->reqId;
-		    }
+                            IDM_addToSendRequestList(newReq);
+                            payload.reqID = newReq->reqId;
+                        }
+                    }
                 }else if(param->operation == IDM_SUBS)
                 {
                     /* Create request entry */
                     sendSubscriptionList *newReq = malloc(sizeof(sendSubscriptionList));
-		    if (newReq != NULL) {
+                    if (newReq != NULL) {
                         memset(newReq, 0, sizeof(sendSubscriptionList));
                         newReq->reqId = gReqIdCounter++;
                         newReq->resCb = param->resCb;
                         newReq->next = NULL;
                         IDM_addToSendSubscriptionuestList(newReq);
                         payload.reqID = newReq->reqId;
-		    }
+                    }
                 }
 
                 payload.operation = param->operation;
@@ -353,8 +381,24 @@ ANSC_STATUS IDM_sendMsg_to_Remote_device(idm_send_msg_Params_t *param)
                 payload.type = param->type;
 
                 /* send message */
-                send_remote_message(&remoteDevice->stRemoteDeviceInfo.conn_info, &payload);
+                int ret = send_remote_message(&remoteDevice->stRemoteDeviceInfo.conn_info, &payload);
                 usleep(250000); //Sleep for 250ms
+                if(ret != 0)
+                {
+                    CcspTraceError(("%s:%d send_remote_message failed \n",__FUNCTION__, __LINE__));
+                    if(param->operation == GET || param->operation == SET || param->operation == IDM_REQUEST)
+                    {
+                        sendReqList *req;
+                        req = IDM_getFromSendRequestList(payload.reqID);
+                        if(req == NULL)
+                        {
+                            CcspTraceError(("%s:%d Request not found in SendRequestList \n",__FUNCTION__, __LINE__));
+                        }else{
+                            CcspTraceInfo(("%s:%d Free allocated request from SendRequestList \n",__FUNCTION__, __LINE__));
+                            free(req);
+                        }
+                    }
+                }
             }else
             {
                 IdmMgrDml_GetConfigData_release(pidmDmlInfo);
@@ -490,6 +534,7 @@ int IDM_Incoming_Response_handler(payload_t * payload)
 {
     rbusMethodAsyncHandle_t async_callBack_handler;
     rbusError_t ret = RBUS_ERROR_SUCCESS;
+    CcspTraceInfo(("%s:%d operation - %d \n",__FUNCTION__, __LINE__,payload->operation));
     /* find req entry in LL */
     if(payload->operation == IDM_SUBS)
     {
