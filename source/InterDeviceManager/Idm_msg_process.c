@@ -120,7 +120,7 @@ sendReqList* IDM_searchFromSendRequestList(const char param_mac[MAC_ADDR_SIZE])
     sendReqList *cur = headsendReqList;
     while (cur != NULL) 
     {
-        if (strncmp(cur->Mac_dest, param_mac, MAC_ADDR_SIZE - 1) == 0)
+        if (strncmp(cur->Mac_dest, param_mac, sizeof(cur->Mac_dest) - 1) == 0)
         {
             return cur;
 	}
@@ -340,7 +340,7 @@ ANSC_STATUS IDM_sendMsg_to_Remote_device(idm_send_msg_Params_t *param)
                     sendReqList *SendReq = IDM_searchFromSendRequestList(param->Mac_dest);
                     if(SendReq != NULL)
                     {
-                        CcspTraceInfo(("%s:%d IDM message already available in linked list. Resending the same request \n",__FUNCTION__, __LINE__));
+                        CcspTraceInfo(("%s:%d Resending the same request with request id %d  \n",__FUNCTION__, __LINE__,SendReq->reqId));
                         payload.reqID = SendReq->reqId; 
                     }
                     else
@@ -385,7 +385,7 @@ ANSC_STATUS IDM_sendMsg_to_Remote_device(idm_send_msg_Params_t *param)
                 usleep(250000); //Sleep for 250ms
                 if(ret != 0)
                 {
-                    CcspTraceError(("%s:%d send_remote_message failed \n",__FUNCTION__, __LINE__));
+                    CcspTraceError(("%s:%d send_remote_message failed for request id %d\n",__FUNCTION__, __LINE__,payload.reqID));
                     if(param->operation == GET || param->operation == SET || param->operation == IDM_REQUEST)
                     {
                         sendReqList *req;
@@ -534,7 +534,7 @@ int IDM_Incoming_Response_handler(payload_t * payload)
 {
     rbusMethodAsyncHandle_t async_callBack_handler;
     rbusError_t ret = RBUS_ERROR_SUCCESS;
-    CcspTraceInfo(("%s:%d operation - %d \n",__FUNCTION__, __LINE__,payload->operation));
+    CcspTraceInfo(("%s:%d operation - %d req id %d \n",__FUNCTION__, __LINE__,payload->operation, payload->reqID));
     /* find req entry in LL */
     if(payload->operation == IDM_SUBS)
     {
