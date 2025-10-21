@@ -109,7 +109,7 @@ sendReqList* IDM_getFromSendRequestList(uint reqID)
     }
 }
 
-sendReqList* IDM_searchFromSendRequestList(const char param_mac[MAC_ADDR_SIZE])
+sendReqList* IDM_searchFromSendRequestList(const char *param_mac)
 {
 
     if(param_mac == NULL)
@@ -394,7 +394,7 @@ ANSC_STATUS IDM_sendMsg_to_Remote_device(idm_send_msg_Params_t *param)
                         {
                             CcspTraceError(("%s:%d Request not found in SendRequestList \n",__FUNCTION__, __LINE__));
                         }else{
-                            CcspTraceInfo(("%s:%d Free allocated request from SendRequestList \n",__FUNCTION__, __LINE__));
+                            CcspTraceInfo(("%s:%d Removing request from SendRequestList \n",__FUNCTION__, __LINE__));
                             free(req);
                         }
                     }
