@@ -575,13 +575,18 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
+        CcspTraceInfo(("%s %d - Current PSM capabilities %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
         CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
 
-        CcspTraceInfo(("%s %d - Getting Factory Default value \n", __FUNCTION__, __LINE__));
-        // index 1 is local device and use default PSM before appending 
-        memset(indexNode->stRemoteDeviceInfo.Capabilities, 0, sizeof(indexNode->stRemoteDeviceInfo.Capabilities));
-        IdmMgr_GetFactoryDefaultValue(PSM_DEVICE_CAPABILITIES, indexNode->stRemoteDeviceInfo.Capabilities);
-
+        if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) == 0)
+        {
+            //Local device capabilites is empty. update local device capability with default values from PSM
+            if(pidmDmlInfo->stConnectionInfo.Capabilities)
+            {
+                strncpy(indexNode->stRemoteDeviceInfo.Capabilities, pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(indexNode->stRemoteDeviceInfo.Capabilities) - 1);
+            }
+        }
+        /* Append local device capabilities from rbus value */
         char* token = strtok(str, ",");
         while (token != NULL) 
         {
@@ -597,9 +602,9 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             }
             token = strtok(NULL, ",");
         }
-    
-        strncpy(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities)-1);
+        // we have a modified local device capabilites now. Write back to PSM 
         CcspTraceInfo(("%s %d: Updated DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));       
+        strncpy(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities)-1);
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
 
         IDM_Broadcast_LocalDeviceInfo();
@@ -626,8 +631,18 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
-        CcspTraceInfo(("%s %d: Existing capabilites before removal = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Current PSM capabilities %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) == 0)
+        {
+            //Local device capabilites is empty. update local device capability with default values from PSM
+            if(pidmDmlInfo->stConnectionInfo.Capabilities)
+            {
+                strncpy(indexNode->stRemoteDeviceInfo.Capabilities, pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(indexNode->stRemoteDeviceInfo.Capabilities) - 1);
+            }
+        }
 
+        /* Remove capability as requested by rbus value */
         char * arr = indexNode->stRemoteDeviceInfo.Capabilities;
         char* token = strtok((char *)out, ",");
         while (token != NULL) 
@@ -660,10 +675,16 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             }
             token = strtok(NULL, ",");
         }
-        CcspTraceInfo(("%s %d: Capabilities after removal = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-        rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
-	ERR_CHK(rc);
-        CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
+
+        /* Some capabilites might have removed in local device. write back to PSM */
+        CcspTraceInfo(("%s %d - Current PSM capabilities %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+
+        if(strcmp(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) != 0)
+        {
+            rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
+	    ERR_CHK(rc);
+        }
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
         IDM_Broadcast_LocalDeviceInfo();
         IdmMgr_write_IDM_ParametersToPSM();
