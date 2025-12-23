@@ -223,7 +223,7 @@ ANSC_STATUS IdmMgr_Data_Init(void)
     gpidmDmlInfo.pidmDmlInfo = (PIDM_DML_INFO)AnscAllocateMemory(sizeof(IDM_DML_INFO));
 
     IdmMgr_SetConfigData_Default();
-    CcspTraceError(("%s %d: Calling IdmMgr_get_IDM_ParametersFromPSM\n", __FUNCTION__, __LINE__));
+    CcspTraceInfo(("%s %d: Calling IdmMgr_get_IDM_ParametersFromPSM\n", __FUNCTION__, __LINE__));
     IdmMgr_get_IDM_ParametersFromPSM();
     pthread_mutex_init(&(gpidmDmlInfo.mDataMutex), &(muttex_attr));
     return ANSC_STATUS_SUCCESS;
