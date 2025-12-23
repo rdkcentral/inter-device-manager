@@ -613,6 +613,8 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
         uint32_t source_len = 0;
         char *source = NULL;
 
+        CcspTraceInfo(("%s %d - Device.X_RDK_Remote.RemoveDeviceCapabilities()  \n", __FUNCTION__, __LINE__));
+
         rbusValue_t value = rbusObject_GetValue(inParams, NULL );
         out = rbusValue_GetString(value, &len);
 
@@ -623,6 +625,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
+        CcspTraceInfo(("%s %d: Existing capabilites before removal = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
 
         char * arr = indexNode->stRemoteDeviceInfo.Capabilities;
         char* token = strtok((char *)out, ",");
@@ -656,6 +659,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             }
             token = strtok(NULL, ",");
         }
+        CcspTraceInfo(("%s %d: Capabilities after removal = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
         rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
 	ERR_CHK(rc);
         CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));

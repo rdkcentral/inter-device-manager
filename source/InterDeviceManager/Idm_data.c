@@ -47,6 +47,8 @@ static int IdmMgr_get_IDM_ParametersFromPSM()
 
     retPsmGet = IDM_RdkBus_GetParamValuesFromDB(param_name,param_value,sizeof(param_value));
 
+    CcspTraceInfo(("%s %d - Capabilities initial value from PSM  %s \n", __FUNCTION__, __LINE__ , param_value));
+
     if (retPsmGet == CCSP_SUCCESS)
     {
         AnscCopyString(pidmDmlInfo->stConnectionInfo.Capabilities, param_value);
@@ -221,6 +223,7 @@ ANSC_STATUS IdmMgr_Data_Init(void)
     gpidmDmlInfo.pidmDmlInfo = (PIDM_DML_INFO)AnscAllocateMemory(sizeof(IDM_DML_INFO));
 
     IdmMgr_SetConfigData_Default();
+    CcspTraceError(("%s %d: Calling IdmMgr_get_IDM_ParametersFromPSM\n", __FUNCTION__, __LINE__));
     IdmMgr_get_IDM_ParametersFromPSM();
     pthread_mutex_init(&(gpidmDmlInfo.mDataMutex), &(muttex_attr));
     return ANSC_STATUS_SUCCESS;
