@@ -575,6 +575,10 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             return RBUS_ERROR_BUS_ERROR;
         }
 
+        // index 1 is local device and use default PSM before appending 
+        memset(indexNode->stRemoteDeviceInfo.Capabilities, 0, sizeof(indexNode->stRemoteDeviceInfo.Capabilities));
+        IdmMgr_GetFactoryDefaultValue(PSM_DEVICE_CAPABILITIES, indexNode->stRemoteDeviceInfo.Capabilities);
+
         char* token = strtok(str, ",");
         while (token != NULL) 
         {
@@ -591,25 +595,13 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             token = strtok(NULL, ",");
         }
     
-        if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) > 0)
-        {
-            CcspTraceInfo(("%s %d: Existing PSM Capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities ));
-            CcspTraceInfo(("%s %d: Remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-            // if run time PSM capability does not have new capabilities, append it and write to PSM
-            if(strstr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
-            {
-                CcspTraceInfo(("%s %d: Adding remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-                rc = strcat_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
-		ERR_CHK(rc);
-                CcspTraceInfo(("%s %d: New PSM capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities));
-
-                IdmMgr_write_IDM_ParametersToPSM();
-            }
-        }
-        
+        strncpy(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities)-1);
+        CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));       
+ 
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
 
         IDM_Broadcast_LocalDeviceInfo();
+        IdmMgr_write_IDM_ParametersToPSM();
         return RBUS_ERROR_SUCCESS;
     }
     else if(strcmp(methodName, "Device.X_RDK_Remote.RemoveDeviceCapabilities()") == 0)
@@ -663,23 +655,14 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             }
             token = strtok(NULL, ",");
         }
+    
+        rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
+	ERR_CHK(rc);
+        CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
 
-        if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) > 0)
-        {
-            CcspTraceInfo(("%s %d: Existing PSM Capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities ));
-            CcspTraceInfo(("%s %d: Remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-            // if run time PSM capabilities does not have new capabilities, append it and write to PSM
-            if(strstr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
-            {
-                CcspTraceInfo(("%s %d: Adding remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-                rc = strcat_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
-		ERR_CHK(rc);
-                CcspTraceInfo(("%s %d: New PSM capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities));
-                IdmMgr_write_IDM_ParametersToPSM();
-            }
-        }
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
         IDM_Broadcast_LocalDeviceInfo();
+        IdmMgr_write_IDM_ParametersToPSM();
         return RBUS_ERROR_SUCCESS;
     }
     else if(strcmp(methodName, "Device.X_RDK_Remote.ResetDeviceCapabilities()") == 0)
