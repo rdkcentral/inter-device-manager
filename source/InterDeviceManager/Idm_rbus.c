@@ -575,8 +575,8 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
-        CcspTraceInfo(("%s %d - Current PSM capabilities %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
-        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        CcspTraceInfo(("%s %d - PSM capabilities before addition: %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Local device capabilities before addition: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
 
         if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) == 0)
         {
@@ -613,20 +613,14 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             token = strtok(NULL, ",");
         }
 
-        CcspTraceInfo(("%s %d - New local device capabilities after update: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
-        if(strcmp(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) != 0)
-        {
-            CcspTraceInfo(("%s %d - Updating PSM with value: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
-            rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
-	    ERR_CHK(rc);
-            IdmMgrDml_GetConfigData_release(pidmDmlInfo);
-            IDM_Broadcast_LocalDeviceInfo();
-            IdmMgr_write_IDM_ParametersToPSM();
-        }
-        else
-        {
-            IdmMgrDml_GetConfigData_release(pidmDmlInfo);
-        }
+        CcspTraceInfo(("%s %d - New local device capabilities after addition: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Updating PSM with value: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
+	ERR_CHK(rc);
+        IdmMgrDml_GetConfigData_release(pidmDmlInfo);
+        CcspTraceInfo(("%s %d - Broadcsting local device capabilities \n", __FUNCTION__, __LINE__));
+        IDM_Broadcast_LocalDeviceInfo();
+        IdmMgr_write_IDM_ParametersToPSM();
 
         return RBUS_ERROR_SUCCESS;
     }
@@ -650,8 +644,8 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
-        CcspTraceInfo(("%s %d - Current PSM capabilities: %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
-        CcspTraceInfo(("%s %d - Current local device capabilities: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        CcspTraceInfo(("%s %d - PSM capabilities before removal: %s  \n", __FUNCTION__, __LINE__,pidmDmlInfo->stConnectionInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Local device capabilities before removal: %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
         if(strlen(indexNode->stRemoteDeviceInfo.Capabilities) == 0)
         {
             CcspTraceInfo(("%s %d - local device capabilities is empty \n", __FUNCTION__, __LINE__));
@@ -688,8 +682,8 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
                         // removing last ; char
                         *(capPos - 1) = '\0';
                     }
-                    IdmMgrDml_GetConfigData_release(pidmDmlInfo);
-                    return RBUS_ERROR_SUCCESS;
+                    // allow to update PSM and broadcast the capabilites after removal
+                    break;
                 }
                 // Copy remaining strings excluding token and comma
                 source = capPos + (strlen(token) + 1);
@@ -706,22 +700,14 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
         }
 
         /* Some capabilites might have removed in local device. write back to PSM */
-        CcspTraceInfo(("%s %d - New local device capabilities after update : %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
-
-        if(strcmp(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) != 0)
-        {
-            CcspTraceInfo(("%s %d - Updating PSM with value %s:  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
-            rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
-	    ERR_CHK(rc);
-            IdmMgrDml_GetConfigData_release(pidmDmlInfo);
-            IDM_Broadcast_LocalDeviceInfo();
-            IdmMgr_write_IDM_ParametersToPSM();
-        }
-        else
-        {       
-            // No change in capabilities
-            IdmMgrDml_GetConfigData_release(pidmDmlInfo);
-        }
+        CcspTraceInfo(("%s %d - New local device capabilities after removal : %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
+        CcspTraceInfo(("%s %d - Updating PSM with new value \n", __FUNCTION__, __LINE__));
+        rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
+	ERR_CHK(rc);
+        IdmMgrDml_GetConfigData_release(pidmDmlInfo);
+        CcspTraceInfo(("%s %d - Publishing local device info \n", __FUNCTION__, __LINE__));
+        IDM_Broadcast_LocalDeviceInfo();
+        IdmMgr_write_IDM_ParametersToPSM();
         return RBUS_ERROR_SUCCESS;
     }
     else if(strcmp(methodName, "Device.X_RDK_Remote.ResetDeviceCapabilities()") == 0)
