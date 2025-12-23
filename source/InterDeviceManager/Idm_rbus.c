@@ -559,6 +559,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
 
     if(strcmp(methodName, "Device.X_RDK_Remote.AddDeviceCapabilities()") == 0)
     {
+        CcspTraceInfo(("%s %d - Device.X_RDK_Remote.AddDeviceCapabilities()  \n", __FUNCTION__, __LINE__));
         char *str = NULL;
         uint32_t len = 0;
 
@@ -579,6 +580,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
         memset(indexNode->stRemoteDeviceInfo.Capabilities, 0, sizeof(indexNode->stRemoteDeviceInfo.Capabilities));
         IdmMgr_GetFactoryDefaultValue(PSM_DEVICE_CAPABILITIES, indexNode->stRemoteDeviceInfo.Capabilities);
 
+        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
         char* token = strtok(str, ",");
         while (token != NULL) 
         {
@@ -596,8 +598,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
         }
     
         strncpy(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities)-1);
-        CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));       
- 
+        CcspTraceInfo(("%s %d: Updated DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));       
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
 
         IDM_Broadcast_LocalDeviceInfo();
@@ -655,11 +656,9 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             }
             token = strtok(NULL, ",");
         }
-    
         rc = strcpy_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
 	ERR_CHK(rc);
         CcspTraceInfo(("%s %d: DeviceCapabilities str = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
-
         IdmMgrDml_GetConfigData_release(pidmDmlInfo);
         IDM_Broadcast_LocalDeviceInfo();
         IdmMgr_write_IDM_ParametersToPSM();
