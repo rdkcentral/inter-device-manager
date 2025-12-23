@@ -575,12 +575,13 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             return RBUS_ERROR_BUS_ERROR;
         }
+        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
 
+        CcspTraceInfo(("%s %d - Getting Factory Default value \n", __FUNCTION__, __LINE__));
         // index 1 is local device and use default PSM before appending 
         memset(indexNode->stRemoteDeviceInfo.Capabilities, 0, sizeof(indexNode->stRemoteDeviceInfo.Capabilities));
         IdmMgr_GetFactoryDefaultValue(PSM_DEVICE_CAPABILITIES, indexNode->stRemoteDeviceInfo.Capabilities);
 
-        CcspTraceInfo(("%s %d - Current local device capabilities %s  \n", __FUNCTION__, __LINE__,indexNode->stRemoteDeviceInfo.Capabilities));
         char* token = strtok(str, ",");
         while (token != NULL) 
         {
