@@ -596,7 +596,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             CcspTraceInfo(("%s %d: Existing PSM Capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities ));
             CcspTraceInfo(("%s %d: Remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
             // if run time PSM capability does not have new capabilities, append it and write to PSM
-            if(ststr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
+            if(strstr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
             {
                 CcspTraceInfo(("%s %d: Adding remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
                 rc = strcat_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
@@ -669,7 +669,7 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             CcspTraceInfo(("%s %d: Existing PSM Capability list = %s\n", __FUNCTION__, __LINE__, pidmDmlInfo->stConnectionInfo.Capabilities ));
             CcspTraceInfo(("%s %d: Remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
             // if run time PSM capabilities does not have new capabilities, append it and write to PSM
-            if(ststr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
+            if(strstr(pidmDmlInfo->stConnectionInfo.Capabilities, indexNode->stRemoteDeviceInfo.Capabilities) == NULL)
             {
                 CcspTraceInfo(("%s %d: Adding remote capability list = %s\n", __FUNCTION__, __LINE__, indexNode->stRemoteDeviceInfo.Capabilities));
                 rc = strcat_s(pidmDmlInfo->stConnectionInfo.Capabilities, sizeof(pidmDmlInfo->stConnectionInfo.Capabilities), indexNode->stRemoteDeviceInfo.Capabilities);
