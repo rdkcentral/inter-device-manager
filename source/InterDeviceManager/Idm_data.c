@@ -124,6 +124,7 @@ int IdmMgr_write_IDM_ParametersToPSM()
     _ansc_memset(param_value, 0, sizeof(param_value));
     _ansc_sprintf(param_name, PSM_DEVICE_CAPABILITIES);
     _ansc_sprintf(param_value, pidmDmlInfo->stConnectionInfo.Capabilities);
+    CcspTraceInfo(("%s %d - Setting %s with value %s \n", __FUNCTION__, __LINE__ ,PSM_DEVICE_CAPABILITIES, pidmDmlInfo->stConnectionInfo.Capabilities));
     retPsmGet = IDM_RdkBus_SetParamValuesToDB(param_name,param_value);
 
     _ansc_memset(param_name, 0, sizeof(param_name));
