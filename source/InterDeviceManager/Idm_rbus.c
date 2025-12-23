@@ -561,7 +561,6 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
     {
         char *str = NULL;
         uint32_t len = 0;
-        char device_cap[512] = { 0 };
 
         rbusValue_t value = rbusObject_GetValue(inParams, NULL );
 
