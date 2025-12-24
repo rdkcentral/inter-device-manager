@@ -47,6 +47,8 @@ static int IdmMgr_get_IDM_ParametersFromPSM()
 
     retPsmGet = IDM_RdkBus_GetParamValuesFromDB(param_name,param_value,sizeof(param_value));
 
+    CcspTraceInfo(("%s %d - Capabilities initial value from PSM  %s \n", __FUNCTION__, __LINE__ , param_value));
+
     if (retPsmGet == CCSP_SUCCESS)
     {
         AnscCopyString(pidmDmlInfo->stConnectionInfo.Capabilities, param_value);
@@ -124,6 +126,7 @@ int IdmMgr_write_IDM_ParametersToPSM()
     _ansc_memset(param_value, 0, sizeof(param_value));
     _ansc_sprintf(param_name, PSM_DEVICE_CAPABILITIES);
     _ansc_sprintf(param_value, pidmDmlInfo->stConnectionInfo.Capabilities);
+    CcspTraceInfo(("%s %d - Setting %s with value %s \n", __FUNCTION__, __LINE__ ,PSM_DEVICE_CAPABILITIES, pidmDmlInfo->stConnectionInfo.Capabilities));
     retPsmGet = IDM_RdkBus_SetParamValuesToDB(param_name,param_value);
 
     _ansc_memset(param_name, 0, sizeof(param_name));
@@ -220,6 +223,7 @@ ANSC_STATUS IdmMgr_Data_Init(void)
     gpidmDmlInfo.pidmDmlInfo = (PIDM_DML_INFO)AnscAllocateMemory(sizeof(IDM_DML_INFO));
 
     IdmMgr_SetConfigData_Default();
+    CcspTraceInfo(("%s %d: Calling IdmMgr_get_IDM_ParametersFromPSM\n", __FUNCTION__, __LINE__));
     IdmMgr_get_IDM_ParametersFromPSM();
     pthread_mutex_init(&(gpidmDmlInfo.mDataMutex), &(muttex_attr));
     return ANSC_STATUS_SUCCESS;
