@@ -653,7 +653,6 @@ rbusError_t X_RDK_Remote_MethodHandler(rbusHandle_t handle, char const* methodNa
             else
             {
                 // PSM data structre is also empty. Read it from factory and update local device cap
-                CcspTraceInfo(("%s %d - Trying FR value \n", __FUNCTION__, __LINE__));
                 IdmMgr_GetFactoryDefaultValue(PSM_DEVICE_CAPABILITIES, pidmDmlInfo->stConnectionInfo.Capabilities);
                 CcspTraceInfo(("%s %d - Updating local device capabilities from factory PSM \n", __FUNCTION__, __LINE__));
                 rc = strcpy_s(indexNode->stRemoteDeviceInfo.Capabilities, sizeof(indexNode->stRemoteDeviceInfo.Capabilities), pidmDmlInfo->stConnectionInfo.Capabilities);

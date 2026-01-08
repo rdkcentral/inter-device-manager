@@ -237,7 +237,7 @@ ANSC_STATUS IdmMgr_GetFactoryDefaultValue(const char * param_name,char * param_v
 {
 
     FILE * fp = NULL;
-    uint32_t len = 0;
+    size_t len = 0;
     char *line = NULL;
 
     if ((param_name == NULL))
@@ -253,11 +253,8 @@ ANSC_STATUS IdmMgr_GetFactoryDefaultValue(const char * param_name,char * param_v
         return ANSC_STATUS_FAILURE;
     }
 
-    CcspTraceInfo(("%s %d: File opened", __FUNCTION__, __LINE__));
-
     while (getline(&line, &len, fp) != -1)
     {
-        CcspTraceInfo(("%s %d: Reading line %s", __FUNCTION__, __LINE__, line));
         if(strstr(line, param_name) != NULL)
         {
             // PSM entry stored as <Record name="dmsb.interdevicemanager.Capabilities" type="astr">Gateway</Record>
