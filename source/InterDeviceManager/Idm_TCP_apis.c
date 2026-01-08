@@ -41,7 +41,8 @@ extern char g_sslSeCA[128];
 #endif
 bool ssl_lib_init = false;
 bool TCP_server_started = false;
-
+bool connect_reset = false;
+pthread_mutex_t connect_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
 typedef int (*callback_recv)( connection_info_t* conn_info, void *payload);
 
 typedef struct tcp_server_threadargs
@@ -526,8 +527,20 @@ int open_remote_connection(connection_config_t* connectionConf, int (*connection
     servaddr.sin_port = htons(connectionConf->port);
 
     CcspTraceInfo(("waiting to connect to the IDM server..\n"));
+    connect_reset = false;
+
     while (1)
     {
+        pthread_mutex_lock(&connect_reset_mutex);
+	if (connect_reset == true)
+        {
+            CcspTraceInfo(("Connect stopped since discovery is restarted"));
+            pthread_mutex_unlock(&connect_reset_mutex);
+	    close(client_sockfd);
+            return -1; //This discovery is omitted due to discovery restart
+        }
+        pthread_mutex_unlock(&connect_reset_mutex);
+
         // Wait indefinitely untill other end idm server accepts the connection
         if (connect(client_sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
         {
@@ -538,6 +551,7 @@ int open_remote_connection(connection_config_t* connectionConf, int (*connection
             break;
         }
     }
+
     //TODO: check for dynamic allocation
     connection_info_t conn_info;
     conn_info.conn = client_sockfd;
@@ -846,12 +860,15 @@ int send_remote_message(connection_info_t* conn_info,void *payload)
 #ifndef IDM_DEBUG
     int val;
     if (conn_info->enc.ctx != NULL && conn_info->enc.ssl != NULL) {
-        if ((val = SSL_write(conn_info->enc.ssl, payload, sizeof(payload_t))) > 0) {
+        val = SSL_write(conn_info->enc.ssl, payload, sizeof(payload_t));
+        if (val > 0) {
+            CcspTraceInfo(("(%s:%d) SSL_write successful connection id %d \n", __FUNCTION__, __LINE__,conn_info->conn));
             return 0;
         }
         else
         {
-            CcspTraceError(("(%s:%d) Data encryption failed (Err: %d)", __FUNCTION__, __LINE__, val));
+            int ssl_err = SSL_get_error(conn_info->enc.ssl, val);
+            CcspTraceError(("(%s:%d) SSL_write failed (Ret: %d, SSL Error: %d)\n", __FUNCTION__, __LINE__, val, ssl_err));
         }
     }
     else

@@ -77,9 +77,10 @@ int stop_discovery();
 
 int rcv_message_cb( connection_info_t* conn_info, void *payload)
 {
-    CcspTraceInfo(("%s %d - \n", __FUNCTION__, __LINE__));
 
     payload_t *recvData = (payload_t*)payload;
+    CcspTraceInfo(("%s %d - msgType-%d \n", __FUNCTION__, __LINE__,recvData->msgType));
+
     if(recvData->msgType == REQ)
     {
         IDM_Incoming_Request_handler(recvData);
@@ -823,6 +824,11 @@ ANSC_STATUS IDM_Start_Device_Discovery()
 ANSC_STATUS IDM_Stop_Device_Discovery()
 {
     CcspTraceInfo(("%s %d - called\n", __FUNCTION__, __LINE__ ));
+
+    pthread_mutex_lock(&connect_reset_mutex);
+    connect_reset = true; //To exit any previous waiting connect  
+    pthread_mutex_unlock(&connect_reset_mutex);
+
     if(stop_discovery() !=0)
     {
         CcspTraceError(("%s %d - stop_discovery failed\n", __FUNCTION__, __LINE__));

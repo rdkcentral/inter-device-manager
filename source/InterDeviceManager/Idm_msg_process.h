@@ -28,6 +28,7 @@ typedef  struct _sendReqList
     uint reqId;
     char Mac_dest[MAC_ADDR_SIZE];
     rbusMethodAsyncHandle_t resCb;
+    char param_name[128];
     uint timeout;
     char output_location[LOC_SIZE];
     struct _sendReqList *next;

@@ -23,6 +23,9 @@
 #include "Idm_rbus.h"
 #include "Idm_msg_process.h"
 
+extern bool connect_reset;
+extern pthread_mutex_t connect_reset_mutex;
+
 int open_remote_connection(connection_config_t* connectionConf, int (*connection_cb)(device_info_t* Device, connection_info_t* conn_info, uint encryption_status), int (*rcv_message_cb)( connection_info_t* conn_info, void *payload)) ;
 
 int send_remote_message(connection_info_t* conn_info, void *payload);
