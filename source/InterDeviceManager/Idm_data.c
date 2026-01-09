@@ -237,7 +237,7 @@ ANSC_STATUS IdmMgr_GetFactoryDefaultValue(const char * param_name,char * param_v
 {
 
     FILE * fp = NULL;
-    uint32_t len = 0;
+    size_t len = 0;
     char *line = NULL;
 
     if ((param_name == NULL))
