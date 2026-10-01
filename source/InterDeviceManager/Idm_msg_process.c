@@ -742,7 +742,7 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
     char* buf = NULL;
     int bytes=0,length=0,total_bytes=0;
 #ifndef IDM_DEBUG
-    SSL* ssl= NULL;
+    connection_info_t *tx_conn = NULL;
 #else
     int conn=0;
 #endif
@@ -767,7 +767,7 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
 #ifndef IDM_DEBUG
                 if(remoteDevice->stRemoteDeviceInfo.conn_info.enc.ssl != NULL)
                 {
-                    ssl = remoteDevice->stRemoteDeviceInfo.conn_info.enc.ssl;
+                    tx_conn = &remoteDevice->stRemoteDeviceInfo.conn_info;
                 }
 #else
                 if(remoteDevice->stRemoteDeviceInfo.conn_info.conn != 0)
@@ -784,9 +784,9 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
             strncpy_s(Data->param_value,sizeof(Data->param_value),FT_INVALID_FILE_SIZE,strlen(FT_INVALID_FILE_SIZE));
             CcspTraceDebug(("%s:%d Data->operation=%d Data->param_value=%s \n",__FUNCTION__,__LINE__,Data->operation,Data->param_value));
 #ifndef IDM_DEBUG
-            if(ssl != NULL)
+            if(tx_conn != NULL)
             {
-                if(bytes = (SSL_write(ssl,Data,sizeof(payload_t))) <= 0 )
+                if((bytes = idm_ssl_write_safe(tx_conn, Data, sizeof(payload_t))) <= 0)
 #else
                     if(bytes = (send(conn,Data,sizeof(payload_t),0)) <= 0 )
 #endif
@@ -800,7 +800,7 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
             }
             else
             {
-                CcspTraceError(("%s:%d ssl value is null\n",__FUNCTION__,__LINE__));
+                CcspTraceError(("%s:%d ssl connection is null\n",__FUNCTION__,__LINE__));
                 IdmMgrDml_GetConfigData_release(pidmDmlInfo);
                 return FT_ERROR;
             }
@@ -833,9 +833,9 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
                 strncpy_s(Data->param_value,sizeof(Data->param_value),FT_INVALID_DST_PATH,strlen(FT_INVALID_DST_PATH));
                 CcspTraceDebug(("%s:%d Data->operation=%d Data->param_value%s\n",__FUNCTION__,__LINE__,Data->operation,Data->param_value));
 #ifndef IDM_DEBUG
-                if(ssl != NULL)
+                if(tx_conn != NULL)
                 {
-                    SSL_write(ssl,Data,sizeof(payload_t));
+                    idm_ssl_write_safe(tx_conn, Data, sizeof(payload_t));
                 }
 #else
                 send(conn,Data,sizeof(payload_t),0);
@@ -845,9 +845,9 @@ char* IDM_SFT_receive(connection_info_t* conn_info,void* payload)
 #ifndef IDM_DEBUG
             strncpy_s(Data->param_value,sizeof(Data->param_value),FT_NOT_WRITABLE_PATH,strlen(FT_NOT_WRITABLE_PATH));            
             CcspTraceDebug(("%s:%d Data->operation=%d Data->param_value%s\n",__FUNCTION__,__LINE__,Data->operation,Data->param_value));
-            if(ssl != NULL)
+            if(tx_conn != NULL)
             {
-                SSL_write(ssl,Data,sizeof(payload_t));
+                idm_ssl_write_safe(tx_conn, Data, sizeof(payload_t));
             }
 #else
             send(conn,Data,sizeof(payload_t),0);

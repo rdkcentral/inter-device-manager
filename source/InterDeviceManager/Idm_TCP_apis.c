@@ -43,6 +43,7 @@ bool ssl_lib_init = false;
 bool TCP_server_started = false;
 bool connect_reset = false;
 pthread_mutex_t connect_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t ssl_io_mutex = PTHREAD_MUTEX_INITIALIZER;
 typedef int (*callback_recv)( connection_info_t* conn_info, void *payload);
 
 typedef struct tcp_server_threadargs
@@ -51,6 +52,55 @@ typedef struct tcp_server_threadargs
     int port;
     char interface[INTF_SIZE];
 } TcpServerThreadArgs;
+
+int idm_ssl_write_safe(connection_info_t *conn_info, const void *payload, size_t payload_len)
+{
+    int val = -1;
+
+    if (conn_info == NULL || payload == NULL)
+    {
+        CcspTraceError(("(%s:%d) invalid input, send failed\n", __FUNCTION__, __LINE__));
+        return -1;
+    }
+
+    pthread_mutex_lock(&ssl_io_mutex);
+
+    if (conn_info->conn < 0 || conn_info->enc.ctx == NULL || conn_info->enc.ssl == NULL)
+    {
+        CcspTraceError(("(%s:%d) SSL connection is invalid, send failed\n", __FUNCTION__, __LINE__));
+        goto done;
+    }
+
+    int ssl_fd = SSL_get_fd(conn_info->enc.ssl);
+
+    if (ssl_fd < 0 || ssl_fd != conn_info->conn)
+    {
+        CcspTraceError(("(%s:%d) SSL fd mismatch (ssl fd: %d, conn fd: %d), send failed\n", __FUNCTION__, __LINE__, ssl_fd, conn_info->conn));
+        goto done;
+    }
+
+    if (!SSL_is_init_finished(conn_info->enc.ssl))
+    {
+        CcspTraceError(("(%s:%d) SSL handshake is not complete, send failed\n", __FUNCTION__, __LINE__));
+        goto done;
+    }
+
+    val = SSL_write(conn_info->enc.ssl, payload, (int)payload_len);
+    if (val <= 0)
+    {
+        int ssl_err = SSL_get_error(conn_info->enc.ssl, val);
+        CcspTraceError(("(%s:%d) SSL_write failed (Ret: %d, SSL Error: %d)\n", __FUNCTION__, __LINE__, val, ssl_err));
+        val = -1;
+    }
+    else
+    {
+        CcspTraceInfo(("(%s:%d) SSL_write successful connection id %d \n", __FUNCTION__, __LINE__,conn_info->conn));
+    }
+
+done:
+    pthread_mutex_unlock(&ssl_io_mutex);
+    return val;
+}
 
 SSL_CTX* init_ctx(void)
 {
@@ -613,7 +663,7 @@ char* getFile_to_remote(connection_info_t* conn_info,void *payload)
         CcspTraceError(("%s:%d file not present\n",__FUNCTION__,__LINE__));
         strncpy_s(Data->param_value,sizeof(Data->param_value),FT_INVALID_FILE_NAME,strlen(FT_INVALID_FILE_NAME));
 #ifndef IDM_DEBUG
-        if ((bytes = SSL_write(conn_info->enc.ssl, Data, sizeof(payload_t))) > 0)
+        if ((bytes = idm_ssl_write_safe(conn_info, Data, sizeof(payload_t))) > 0)
         {
             CcspTraceError(("%s:%d invalid file name information is sent to peer device\n",__FUNCTION__,__LINE__));
         }
@@ -641,7 +691,7 @@ char* getFile_to_remote(connection_info_t* conn_info,void *payload)
         fclose(fptr);
         strncpy_s(Data->param_value,sizeof(Data->param_value),FT_FILE_SIZE_EXCEED,strlen(FT_FILE_SIZE_EXCEED));
 #ifndef IDM_DEBUG
-        if ((bytes = SSL_write(conn_info->enc.ssl, Data, sizeof(payload_t))) > 0)
+        if ((bytes = idm_ssl_write_safe(conn_info, Data, sizeof(payload_t))) > 0)
         {
             CcspTraceError(("%s:%d file size is more than the configured value and information is sent to peer device\n",__FUNCTION__,__LINE__));
         }
@@ -669,7 +719,7 @@ char* getFile_to_remote(connection_info_t* conn_info,void *payload)
             fclose(fptr);
             return FT_ERROR;
         }
-        if ((bytes = SSL_write(conn_info->enc.ssl, Data, sizeof(payload_t))) > 0)
+        if ((bytes = idm_ssl_write_safe(conn_info, Data, sizeof(payload_t))) > 0)
         {
             free(buffer);
             buffer =(char*)malloc (length);
@@ -681,7 +731,7 @@ char* getFile_to_remote(connection_info_t* conn_info,void *payload)
                     fclose(fptr);
                     return FT_ERROR;
                 }
-                if((bytes = SSL_write(conn_info->enc.ssl, buffer,length)) <= 0)
+                if((bytes = idm_ssl_write_safe(conn_info, buffer, length)) <= 0)
                 {
                     CcspTraceError(("file data is not transformed\n"));
                 }
@@ -817,10 +867,10 @@ char* sendFile_to_remote(connection_info_t* conn_info,void *payload,char* output
         free(buffer);
         return FT_ERROR;
     }
-    if ((bytes = SSL_write(conn_info->enc.ssl, Data, sizeof(payload_t))) > 0)
+    if ((bytes = idm_ssl_write_safe(conn_info, Data, sizeof(payload_t))) > 0)
     {
         // above ssl write transfers the information about file length and output file location whereas below one sends the file content
-        if((bytes = SSL_write(conn_info->enc.ssl, buffer,length)) <= 0)
+        if((bytes = idm_ssl_write_safe(conn_info, buffer, length)) <= 0)
         {
             CcspTraceError(("file data is not transformed\n"));
         }
@@ -858,22 +908,15 @@ char* sendFile_to_remote(connection_info_t* conn_info,void *payload,char* output
 int send_remote_message(connection_info_t* conn_info,void *payload)
 {
 #ifndef IDM_DEBUG
-    int val;
-    if (conn_info->enc.ctx != NULL && conn_info->enc.ssl != NULL) {
-        val = SSL_write(conn_info->enc.ssl, payload, sizeof(payload_t));
-        if (val > 0) {
-            CcspTraceInfo(("(%s:%d) SSL_write successful connection id %d \n", __FUNCTION__, __LINE__,conn_info->conn));
-            return 0;
-        }
-        else
-        {
-            int ssl_err = SSL_get_error(conn_info->enc.ssl, val);
-            CcspTraceError(("(%s:%d) SSL_write failed (Ret: %d, SSL Error: %d)\n", __FUNCTION__, __LINE__, val, ssl_err));
-        }
+
+    if (idm_ssl_write_safe(conn_info, payload, sizeof(payload_t)) > 0) {
+        CcspTraceInfo(("(%s:%d) SSL_write successful connection id %d \n", __FUNCTION__, __LINE__, conn_info->conn));
+        return 0;
     }
     else
     {
-        CcspTraceError(("(%s:%d) SSL CTX is NULL, Data send failed\n", __FUNCTION__, __LINE__));
+        CcspTraceInfo(("(%s:%d) SSL_write failed \n", __FUNCTION__, __LINE__));
+        return -1;
     }
 #else
     if(send(conn_info->conn, payload, sizeof(payload_t), 0)<0)
@@ -881,19 +924,40 @@ int send_remote_message(connection_info_t* conn_info,void *payload)
         CcspTraceError(("%s %d - send failed failed : %s\n",  __FUNCTION__, __LINE__, strerror(errno)));
         return -1;
     }
+    else
+    {
+        CcspTraceInfo(("%s %d - send successful \n",  __FUNCTION__, __LINE__));
+        return 0;
+    }
 #endif
-    return -1;
 }
 
 int close_remote_connection(connection_info_t* conn_info)
 {
-    if (conn_info->enc.ssl != NULL) {
-        SSL_free(conn_info->enc.ssl);
+    if (conn_info == NULL) {
+        return -1;
     }
-    close(conn_info->conn);
+
+    pthread_mutex_lock(&ssl_io_mutex);
+
+    if (conn_info->enc.ssl != NULL) {
+        SSL_shutdown(conn_info->enc.ssl);
+        SSL_free(conn_info->enc.ssl);
+        conn_info->enc.ssl = NULL;
+    }
+
+    if (conn_info->conn >= 0) {
+        close(conn_info->conn);
+        conn_info->conn = -1;
+    }
+
     if (conn_info->enc.ctx != NULL) {
         SSL_CTX_free(conn_info->enc.ctx);
+        conn_info->enc.ctx = NULL;
     }
+
+    pthread_mutex_unlock(&ssl_io_mutex);
+
     CcspTraceInfo(("%s %d - socket closed\n", __FUNCTION__, __LINE__));
     return 1;
 }
