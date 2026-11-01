@@ -18,6 +18,7 @@
  */
 #include <net/if.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include "Idm_TCP_apis.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -858,43 +859,119 @@ char* sendFile_to_remote(connection_info_t* conn_info,void *payload,char* output
 int send_remote_message(connection_info_t* conn_info,void *payload)
 {
 #ifndef IDM_DEBUG
-    int val;
-    if (conn_info->enc.ctx != NULL && conn_info->enc.ssl != NULL) {
-        val = SSL_write(conn_info->enc.ssl, payload, sizeof(payload_t));
-        if (val > 0) {
-            CcspTraceInfo(("(%s:%d) SSL_write successful connection id %d \n", __FUNCTION__, __LINE__,conn_info->conn));
-            return 0;
-        }
-        else
-        {
-            int ssl_err = SSL_get_error(conn_info->enc.ssl, val);
-            CcspTraceError(("(%s:%d) SSL_write failed (Ret: %d, SSL Error: %d)\n", __FUNCTION__, __LINE__, val, ssl_err));
-        }
-    }
-    else
+    int val = -1;
+    int ssl_err = 0;
+    SSL *ssl = NULL;
+
+    pthread_mutex_lock(&conn_info->lock);
+
+    if (conn_info->closing || conn_info->enc.ctx == NULL || conn_info->enc.ssl == NULL)
     {
-        CcspTraceError(("(%s:%d) SSL CTX is NULL, Data send failed\n", __FUNCTION__, __LINE__));
-    }
-#else
-    if(send(conn_info->conn, payload, sizeof(payload_t), 0)<0)
-    {
-        CcspTraceError(("%s %d - send failed failed : %s\n",  __FUNCTION__, __LINE__, strerror(errno)));
+        pthread_mutex_unlock(&conn_info->lock);
+
+        CcspTraceError(("(%s:%d) Connection is closing or SSL is NULL\n",
+                    __FUNCTION__, __LINE__));
         return -1;
     }
+
+    /* Save SSL pointer while protected by lock */
+    ssl = conn_info->enc.ssl;
+
+    conn_info->active_senders++;
+
+    pthread_mutex_unlock(&conn_info->lock);
+
+    /*
+     * Send data with valid SSL pointer and without a lock.
+     * If socket is broken, SSL_write should return an error.
+     */
+    val = SSL_write(ssl, payload, sizeof(payload_t));
+
+    if (val <= 0)
+    {
+        ssl_err = SSL_get_error(ssl, val);
+    }
+
+    pthread_mutex_lock(&conn_info->lock);
+
+    conn_info->active_senders--;
+
+    if (conn_info->closing &&  conn_info->active_senders == 0)
+    {
+        pthread_cond_signal(&conn_info->cond);
+    }
+
+    pthread_mutex_unlock(&conn_info->lock);
+
+    if (val > 0)
+    {
+        CcspTraceInfo(("(%s:%d) SSL_write successful\n", __FUNCTION__, __LINE__));
+        return 0;
+    }
+
+    CcspTraceError(("(%s:%d) SSL_write failed (Ret: %d, SSL Error: %d)\n", __FUNCTION__, __LINE__, val, ssl_err));
+
+#else
+    if(send(conn_info->conn, payload, sizeof(payload_t), 0) < 0)
+    {
+        CcspTraceError(("%s %d - send failed : %s\n",
+                    __FUNCTION__, __LINE__, strerror(errno)));
+        return -1;
+    }
+
+    return 0;
+
 #endif
+
     return -1;
 }
 
 int close_remote_connection(connection_info_t* conn_info)
 {
-    if (conn_info->enc.ssl != NULL) {
+    pthread_mutex_lock(&conn_info->lock);
+
+    conn_info->closing = true;
+
+    /*
+     * Interrupt any blocking SSL_write before waiting.
+     */
+    if (conn_info->active_senders > 0 && conn_info->conn > 0)
+    {
+        if (shutdown(conn_info->conn, SHUT_RDWR) != 0)
+        {
+            CcspTraceError(("%s: Failed to shut down socket %d: %s\n",
+                            __FUNCTION__, conn_info->conn, strerror(errno)));
+        }
+    }
+
+    while (conn_info->active_senders > 0)
+    {
+        pthread_cond_wait(&conn_info->cond, &conn_info->lock);
+    }
+
+    if (conn_info->enc.ssl != NULL)
+    {
         SSL_free(conn_info->enc.ssl);
+        conn_info->enc.ssl = NULL;
     }
-    close(conn_info->conn);
-    if (conn_info->enc.ctx != NULL) {
+
+    if (conn_info->conn > 0)
+    {
+        close(conn_info->conn);
+        conn_info->conn = 0;
+    }
+
+    if (conn_info->enc.ctx != NULL)
+    {
         SSL_CTX_free(conn_info->enc.ctx);
+        conn_info->enc.ctx = NULL;
     }
+
+    conn_info->closing = false;
+
+    pthread_mutex_unlock(&conn_info->lock);
+
     CcspTraceInfo(("%s %d - socket closed\n", __FUNCTION__, __LINE__));
+
     return 1;
 }
-

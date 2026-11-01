@@ -252,9 +252,15 @@ int connection_cb(device_info_t* Device, connection_info_t* conn_info, uint encr
                 IdmMgrDml_GetConfigData_release(pidmDmlInfo);
                 break;
             }
+            // Authenticatin phase
+            pthread_mutex_lock(&remoteDevice->stRemoteDeviceInfo.conn_info.lock);
+            CcspTraceInfo(("%s %d - Setting conection info for device status : %d\n", __FUNCTION__, __LINE__,remoteDevice->stRemoteDeviceInfo.Status));
             remoteDevice->stRemoteDeviceInfo.conn_info.conn = conn_info->conn;
 	    remoteDevice->stRemoteDeviceInfo.conn_info.enc.ctx = conn_info->enc.ctx;
             remoteDevice->stRemoteDeviceInfo.conn_info.enc.ssl = conn_info->enc.ssl;
+            remoteDevice->stRemoteDeviceInfo.conn_info.closing = false;
+            remoteDevice->stRemoteDeviceInfo.conn_info.active_senders = 0;
+            pthread_mutex_unlock(&remoteDevice->stRemoteDeviceInfo.conn_info.lock);
             IdmMgrDml_GetConfigData_release(pidmDmlInfo);
             CcspTraceInfo(("%s %d - sending Capabilities Request socket : %d\n", __FUNCTION__, __LINE__,remoteDevice->stRemoteDeviceInfo.conn_info.conn));
             IDM_sendMsg_to_Remote_device(&param);
@@ -633,6 +639,12 @@ void *discovery_cb_thread(void *arg)
             return NULL;
         }
         memset(newNode, 0, sizeof(IDM_REMOTE_DEVICE_LINK_INFO));
+
+        pthread_mutex_init(&newNode->stRemoteDeviceInfo.conn_info.lock, NULL);
+        pthread_cond_init(&newNode->stRemoteDeviceInfo.conn_info.cond, NULL);
+        newNode->stRemoteDeviceInfo.conn_info.closing = false;
+        newNode->stRemoteDeviceInfo.conn_info.active_senders = 0;
+
         if(authentication_status)
             newNode->stRemoteDeviceInfo.Status = DEVICE_AUTHENTICATED;
         else if(discovery_status)
