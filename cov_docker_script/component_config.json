@@ -188,8 +188,8 @@
           "commands": [
             "sh ./.bootstrap",
             "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --enable-shared --disable-static",
-            "make -j2",
-            "make install"
+            "make -j2 MAKEINFO=true",
+            "make install MAKEINFO=true"
           ]
         }
       },
