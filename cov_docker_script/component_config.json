@@ -180,6 +180,50 @@
         }
       },
       {
+        "name": "gmp",
+        "repo": "https://github.com/gmp-mirror/gmp.git",
+        "branch": "master",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "sh ./.bootstrap",
+            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --enable-shared --disable-static",
+            "make -j2",
+            "make install"
+          ]
+        }
+      },
+      {
+        "name": "nettle",
+        "repo": "https://github.com/gnutls/nettle.git",
+        "branch": "nettle_3.10.2_release_20250626",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "sh ./.bootstrap",
+            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --enable-shared --disable-static --disable-documentation CPPFLAGS=\"${CPPFLAGS:-} -I$HOME/usr/include\" LDFLAGS=\"${LDFLAGS:-} -L$HOME/usr/lib\"",
+            "make -j2",
+            "make install",
+            "cp --remove-destination libnettle.so .lib/libnettle.so",
+            "cp --remove-destination libhogweed.so .lib/libhogweed.so"
+          ]
+        }
+      },
+      {
+        "name": "gnutls",
+        "repo": "https://github.com/gnutls/gnutls.git",
+        "branch": "3.8.13",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --with-included-libtasn1 --with-included-unistring --without-p11-kit --disable-doc --disable-tools --disable-tests --disable-cxx CPPFLAGS=\"${CPPFLAGS:-} -I$HOME/usr/include\" LDFLAGS=\"${LDFLAGS:-} -L$HOME/usr/lib\"",
+            "make -j2",
+            "make install",
+            "pkg-config --modversion gnutls"
+          ]
+        }
+      },
+      {
         "name": "glib-networking",
         "repo": "https://github.com/GNOME/glib-networking.git",
         "branch": "master",
@@ -255,50 +299,6 @@
         ],
         "build": {
           "type": "autotools"
-        }
-      },
-      {
-        "name": "gmp",
-        "repo": "https://github.com/gmp-mirror/gmp.git",
-        "branch": "master",
-        "build": {
-          "type": "commands",
-          "commands": [
-            "sh ./.bootstrap",
-            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --enable-shared --disable-static",
-            "make -j2",
-            "make install"
-          ]
-        }
-      },
-      {
-        "name": "nettle",
-        "repo": "https://github.com/gnutls/nettle.git",
-        "branch": "nettle_3.10.2_release_20250626",
-        "build": {
-          "type": "commands",
-          "commands": [
-            "sh ./.bootstrap",
-            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --enable-shared --disable-static --disable-documentation CPPFLAGS=\"${CPPFLAGS:-} -I$HOME/usr/include\" LDFLAGS=\"${LDFLAGS:-} -L$HOME/usr/lib\"",
-            "make -j2",
-            "make install",
-            "cp --remove-destination libnettle.so .lib/libnettle.so",
-            "cp --remove-destination libhogweed.so .lib/libhogweed.so"
-          ]
-        }
-      },
-      {
-        "name": "gnutls",
-        "repo": "https://github.com/gnutls/gnutls.git",
-        "branch": "3.8.13",
-        "build": {
-          "type": "commands",
-          "commands": [
-            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --with-included-libtasn1 --with-included-unistring --without-p11-kit --disable-doc --disable-tools --disable-tests --disable-cxx CPPFLAGS=\"${CPPFLAGS:-} -I$HOME/usr/include\" LDFLAGS=\"${LDFLAGS:-} -L$HOME/usr/lib\"",
-            "make -j2",
-            "make install",
-            "pkg-config --modversion gnutls"
-          ]
         }
       },
       {
