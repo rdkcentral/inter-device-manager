@@ -153,6 +153,46 @@
         }
       },
       {
+        "name": "libcurl",
+        "repo": "https://github.com/curl/curl.git",
+        "branch": "curl-8_6_0",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "autoreconf -fi",
+            "./configure --prefix=$HOME/usr --libdir=$HOME/usr/lib --disable-static --enable-shared --without-ssl --without-zlib",
+            "make -j$(nproc)",
+            "make install"
+          ]
+        }
+      },
+      {
+        "name": "libproxy",
+        "repo": "https://github.com/libproxy/libproxy.git",
+        "branch": "0.5.4",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "export PATH=\"$HOME/.local/bin:$PATH\"",
+            "meson setup build --prefix=$HOME/usr --libdir=lib -Ddocs=false -Dtests=false -Dconfig-gnome=false -Dconfig-kde=false -Dconfig-osx=false -Dconfig-windows=false -Dpacrunner-duktape=false -Dintrospection=false -Dvapi=false",
+            "ninja -C build all install"
+          ]
+        }
+      },
+      {
+        "name": "glib-networking",
+        "repo": "https://github.com/GNOME/glib-networking.git",
+        "branch": "master",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "export PATH=\"$HOME/.local/bin:$PATH\"",
+            "meson setup build --prefix=$HOME/usr --libdir=lib -Dtests=false -Dgnome_proxy=disabled",
+            "ninja -C build all install"
+          ]
+        }
+      },
+      {
         "name": "libsoup",
         "repo": "https://github.com/GNOME/libsoup.git",
         "branch": "2.74.3",
