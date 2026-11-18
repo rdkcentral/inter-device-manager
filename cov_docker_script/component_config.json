@@ -303,7 +303,9 @@
           }
         ],
         "build": {
-          "type": "autotools"
+          "type": "autotools",
+          "configure_flags": "--prefix=$HOME/usr",
+          "make_targets": ["all", "install-pkgincludeHEADERS", "install-dist_pkgincludeHEADERS"]
         }
       },
       {
@@ -344,6 +346,13 @@
     "name": "inter-device-manager",
     "include_path": "$HOME/usr/include/rdkb/",
     "lib_output_path": "$HOME/usr/local/lib/",
+    "source_patches": [
+      {
+        "file": "$HOME/usr/include/rdkb/ccsp_message_bus.h",
+        "search": "    DBusLoop *loop;",
+        "replace": "    struct DBusLoop *loop;"
+      }
+    ],
     "build": {
       "type": "autotools",
       "configure_options_file": "cov_docker_script/configure_options.conf"
