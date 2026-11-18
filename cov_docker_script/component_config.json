@@ -141,7 +141,7 @@
       {
         "name": "libpsl",
         "repo": "https://github.com/rockdaboot/libpsl.git",
-        "branch": "0.21.5",
+        "branch": "master",
         "build": {
           "type": "commands",
           "commands": [
@@ -155,7 +155,7 @@
       {
         "name": "libcurl",
         "repo": "https://github.com/curl/curl.git",
-        "branch": "curl-8_6_0",
+        "branch": "master",
         "build": {
           "type": "commands",
           "commands": [
@@ -169,7 +169,7 @@
       {
         "name": "libproxy",
         "repo": "https://github.com/libproxy/libproxy.git",
-        "branch": "0.5.4",
+        "branch": "main",
         "build": {
           "type": "commands",
           "commands": [
