@@ -196,7 +196,7 @@
       {
         "name": "nettle",
         "repo": "https://github.com/gnutls/nettle.git",
-        "branch": "nettle_3.10.2_release_20250626",
+        "branch": "master",
         "build": {
           "type": "commands",
           "commands": [
@@ -212,7 +212,7 @@
       {
         "name": "gnutls",
         "repo": "https://github.com/gnutls/gnutls.git",
-        "branch": "3.8.13",
+        "branch": "master",
         "build": {
           "type": "commands",
           "commands": [
@@ -242,7 +242,7 @@
       {
         "name": "libsoup",
         "repo": "https://github.com/GNOME/libsoup.git",
-        "branch": "2.74.3",
+        "branch": "master",
         "header_paths": [
           { "source": "libsoup", "destination": "$HOME/usr/include/rdkb" }
         ],
@@ -258,7 +258,7 @@
       {
         "name": "gssdp-1.0.5",
         "repo": "https://github.com/GNOME/gssdp.git",
-        "branch": "gssdp-1.0.5",
+        "branch": "master",
         "header_paths": [
           {
             "source": "libgssdp",
@@ -277,7 +277,7 @@
       {
         "name": "gupnp-1.0.5",
         "repo": "https://github.com/GNOME/gupnp.git",
-        "branch": "gupnp-1.0.5",
+        "branch": "master",
         "header_paths": [
           { "source": "libgupnp", "destination": "$HOME/usr/include/rdkb/libgupnp" }
         ],
