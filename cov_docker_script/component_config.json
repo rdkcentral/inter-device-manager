@@ -242,7 +242,7 @@
       {
         "name": "libsoup",
         "repo": "https://github.com/GNOME/libsoup.git",
-        "branch": "master",
+        "branch": "2.74.3",
         "header_paths": [
           { "source": "libsoup", "destination": "$HOME/usr/include/rdkb" }
         ],
