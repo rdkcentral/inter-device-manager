@@ -212,7 +212,7 @@
       {
         "name": "gnutls",
         "repo": "https://github.com/gnutls/gnutls.git",
-        "branch": "master",
+        "branch": "3.8.13",
         "build": {
           "type": "commands",
           "commands": [
@@ -258,7 +258,7 @@
       {
         "name": "gssdp-1.0.5",
         "repo": "https://github.com/GNOME/gssdp.git",
-        "branch": "master",
+        "branch": "gssdp-1.0.5",
         "header_paths": [
           {
             "source": "libgssdp",
@@ -277,7 +277,7 @@
       {
         "name": "gupnp-1.0.5",
         "repo": "https://github.com/GNOME/gupnp.git",
-        "branch": "master",
+        "branch": "gupnp-1.0.5",
         "header_paths": [
           { "source": "libgupnp", "destination": "$HOME/usr/include/rdkb/libgupnp" }
         ],
