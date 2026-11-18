@@ -285,6 +285,8 @@
           "type": "commands",
           "commands": [
             "export PATH=\"$HOME/.local/bin:$PATH\"",
+            "cp --remove-destination libgupnp/guul.c subprojects/guul/guul.c",
+            "cp --remove-destination libgupnp/guul.h subprojects/guul/guul.h",
             "meson setup build --prefix=$HOME/usr --libdir=lib -Dintrospection=false -Dvapi=false -Dexamples=false -Dgtk_doc=false",
             "ninja -C build -j2 all install"
           ]
