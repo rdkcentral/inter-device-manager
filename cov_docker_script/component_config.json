@@ -307,6 +307,27 @@
         }
       },
       {
+        "name": "rdk_logger-headers",
+        "repo": "https://github.com/rdkcentral/rdk_logger.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "libSyscallWrapper",
+        "repo": "https://github.com/rdkcentral/libSyscallWrapper.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "source", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "--without-rdklogger LIBS=\"${LIBS:-} -lpthread\"",
+          "make_targets": ["-C", "source", "libsecure_wrapper.la"]
+        }
+      },
+      {
         "name": "secure-upnp",
         "repo": "https://github.com/rdkcentral/secure-upnp.git",
         "branch": "develop",
