@@ -377,6 +377,14 @@
       {
         "description": "Creating link-only RDK logger stub",
         "command": "gcc -shared -x c /dev/null -o $HOME/usr/dummies/librdkloggers.so"
+      },
+      {
+        "description": "Creating link-only privilege stub",
+        "command": "gcc -shared -x c /dev/null -o $HOME/usr/dummies/libprivilege.so"
+      },
+      {
+        "description": "Creating link-only Breakpad wrapper stub",
+        "command": "gcc -shared -x c /dev/null -o $HOME/usr/dummies/libbreakpadwrapper.so"
       }
     ],
     "build": {
