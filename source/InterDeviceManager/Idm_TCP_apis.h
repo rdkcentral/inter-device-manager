@@ -20,6 +20,8 @@
 #ifndef _IDM_TCP_H_
 #define _IDM_TCP_H_
 
+#include <stddef.h>
+
 #include "Idm_rbus.h"
 #include "Idm_msg_process.h"
 
@@ -29,6 +31,8 @@ extern pthread_mutex_t connect_reset_mutex;
 int open_remote_connection(connection_config_t* connectionConf, int (*connection_cb)(device_info_t* Device, connection_info_t* conn_info, uint encryption_status), int (*rcv_message_cb)( connection_info_t* conn_info, void *payload)) ;
 
 int send_remote_message(connection_info_t* conn_info, void *payload);
+
+int idm_ssl_write_safe(connection_info_t* conn_info, const void *payload, size_t payload_len);
 
 int close_remote_connection(connection_info_t* conn_info);
 #endif
