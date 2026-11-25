@@ -27,7 +27,7 @@ AM_LDFLAGS = -lccsp_common
 AM_LDFLAGS +=
 
 AM_LDFLAGS += -lulog
-AM_CPPFLAGS = -Wall -Werror
+AM_CPPFLAGS = -Wall -Werror -Wno-error=format
 ACLOCAL_AMFLAGS = -I m4
 hardware_platform = i686-linux-gnu
 bin_PROGRAMS = interdevicemanager

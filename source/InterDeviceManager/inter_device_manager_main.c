@@ -31,6 +31,7 @@
 #include "ccsp_dm_api.h"
 #include "cap.h"
 #include <execinfo.h>
+#include <stdio.h>
 cap_user appcaps;
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
@@ -183,6 +184,8 @@ int main(int argc, char* argv[])
     drop_root_caps(&appcaps);
     update_process_caps(&appcaps);
     read_capability(&appcaps);
+
+    printf("Test coverity workflow: %s\n");
 
     for(idx = 1; idx < argc; idx++)
     {
