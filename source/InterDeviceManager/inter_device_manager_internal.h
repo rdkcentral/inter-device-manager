@@ -119,6 +119,10 @@ typedef struct {
 
 typedef struct {
     int conn; //descriptor/sock
+    bool closing;
+    int active_senders;
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
     ssl_info_t enc; // Encryption info
 } connection_info_t; 
 
